@@ -1,12 +1,15 @@
 module GrassmannAverages
 
-"""
-X is a N x D matrix.
-Return a D x K matrix.
-"""
+function trimmed_mean(arr, N, P)
+    arr_sorted = sort(arr);
+    low_index = N * P / 100;
+    high_index = N - N * P/100;
+    return mean(arr_sorted[low_index:high_index]);
+end
 
-function grassmann_average(X, K)
+function grassmann_median(X, K, P)
     K >= 0 || throw(ArgumentError("Number of components must be positive"));
+    (P >= 0 && P < 50) || throw(ArgumentError("Trimming average percentage must be at least 0 and less than 50 percent"));
     
     N = size(X, 1);
     D = size(X, 2);
@@ -21,8 +24,11 @@ function grassmann_average(X, K)
         while true
             dotsign = sign(X * q);
             
-            "Compute the weighted average of the elements"
-            newQ = X' * dotsign;
+            "Compute the weighted average of the elements. Robustness is achieved by element-wise median."            
+            newQ = Array{Real}(D);
+            for j=1:D
+                newQ[j] = trimmed_mean(X[: , j] .* dotsign, N, P);
+            end
             newQ /= norm(newQ);
             
             "If the L_1 difference between q and newQ is small, then terminate."
